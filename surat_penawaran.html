@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Verifikasi Penawaran Lidan </title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body class="bg-slate-100 min-h-screen flex items-center justify-center p-4">
+
+    <script>
+        // SEMUA TEKS, LINK, DAN KONFIGURASI DALAM JSON
+        const VERIFY_CONFIG = {
+            "api": {
+                "baseUrl": "https://lidan-co-id.pages.dev/api/contacts_filter_dinamis6",
+                "tableName": "surat_penawaran",
+                "authKey": "admin", // HAPUS NILAI INI SAAT UPLOAD (Kosongkan: "")
+                "viewRole": "user"   // Role untuk akses publik/verifikasi
+            },
+            "ui": {
+                "headerTitle": "Validasi Penawaran",
+                "headerSubtitle": "Lidan Psikologi Indonesia",
+                "statusBadge": "VERIFIED",
+                "loadingText": "Menghubungkan ke Secure Server...",
+                "errorTitle": "Dokumen Tidak Valid",
+                "errorMessage": "Token verifikasi tidak ditemukan atau data telah dihapus dari sistem kami.",
+                "labels": {
+                    "noSurat": "Nomor Surat",
+                    "perihal": "Perihal",
+                    "tanggal": "Tanggal Terbit",
+                    "penerima": "Ditujukan Kepada",
+                    "instansi": "Instansi/Lembaga",
+                    "penandaTangan": "Penanda Tangan",
+                    "lampiran": "Lampiran",
+                    "keterangan": "Catatan Tambahan"
+                },
+                "footer": {
+                    "text": "Dokumen ini sah secara digital. Hubungi kami jika ada keraguan mengenai keaslian dokumen.",
+                    "linkText": "Kembali ke Beranda",
+                    "linkUrl": "https://lidan.co.id"
+                }
+            }
+        };
+    </script>
+
+    <div class="max-w-xl w-full bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100">
+        <div class="bg-indigo-900 p-8 text-white flex justify-between items-center">
+            <div>
+                <h1 id="ui-header-title" class="text-xl font-black uppercase tracking-tighter"></h1>
+                <p id="ui-header-subtitle" class="text-indigo-300 text-[10px] font-bold uppercase tracking-widest"></p>
+            </div>
+            <div id="ui-status-badge" class="bg-green-500 p-2 rounded-lg text-white font-bold text-[10px] italic animate-pulse"></div>
+        </div>
+
+        <div id="content" class="p-8">
+            <div id="loading" class="text-center py-12">
+                <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-indigo-500 border-t-transparent mb-4"></div>
+                <p id="ui-loading-text" class="text-gray-400 text-xs font-bold uppercase tracking-widest"></p>
+            </div>
+
+            <div id="error" class="hidden text-center py-12">
+                <div class="bg-red-50 text-red-500 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">!</div>
+                <h2 id="ui-error-title" class="text-lg font-black text-gray-800 uppercase"></h2>
+                <p id="ui-error-message" class="text-gray-400 text-sm mt-2"></p>
+            </div>
+
+            <div id="data-box" class="hidden space-y-6">
+                <div class="grid grid-cols-1 gap-6 border-b border-gray-50 pb-8">
+                    <div class="flex flex-col">
+                        <span id="label-noSurat" class="text-[9px] uppercase font-black text-indigo-400 tracking-widest"></span>
+                        <span id="no_surat" class="text-lg font-black text-gray-800 tracking-tight"></span>
+                    </div>
+                    <div class="flex flex-col">
+                        <span id="label-perihal" class="text-[9px] uppercase font-black text-indigo-400 tracking-widest"></span>
+                        <span id="perihal" class="text-sm font-bold text-gray-700 leading-relaxed"></span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-6 text-sm">
+                    <div class="flex flex-col">
+                        <span id="label-tanggal" class="text-[9px] uppercase font-black text-gray-400 tracking-widest"></span>
+                        <span id="tanggal" class="font-bold text-gray-700 mt-1"></span>
+                    </div>
+                    <div class="flex flex-col">
+                        <span id="label-lampiran" class="text-[9px] uppercase font-black text-gray-400 tracking-widest"></span>
+                        <span id="lampiran" class="font-bold text-gray-700 mt-1 text-xs"></span>
+                    </div>
+                </div>
+
+                <div class="bg-slate-50 rounded-2xl p-6 space-y-4 border border-slate-100">
+                    <div class="flex flex-col">
+                        <span id="label-penerima" class="text-[9px] uppercase font-black text-gray-400 tracking-widest"></span>
+                        <span id="penerima" class="font-bold text-gray-800 uppercase tracking-tight"></span>
+                        <span id="instansi_penerima" class="text-xs font-bold text-indigo-600"></span>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-6 p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100">
+                    <div id="barcode-signature" class="bg-white p-2 rounded-xl shadow-sm border border-indigo-100"></div>
+                    <div class="flex flex-col">
+                        <span id="label-penandaTangan" class="text-[9px] uppercase font-black text-indigo-400 tracking-widest"></span>
+                        <span id="nama_penanda" class="font-black text-gray-800 underline decoration-indigo-300 decoration-2"></span>
+                        <span id="jabatan_penanda" class="text-[10px] font-bold text-gray-500 uppercase italic mt-1"></span>
+                    </div>
+                </div>
+
+                <div id="ket-box" class="p-4 bg-yellow-50 rounded-xl border border-yellow-100">
+                    <span id="label-keterangan" class="text-[9px] uppercase font-black text-yellow-600 tracking-widest mb-1 block"></span>
+                    <p id="keterangan" class="text-xs text-yellow-800 leading-relaxed"></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-gray-50 p-6 text-center border-t border-gray-100">
+            <p id="ui-footer-text" class="text-[10px] text-gray-400 font-bold leading-relaxed mb-4 px-4"></p>
+            <a id="ui-footer-link" href="#" class="inline-block bg-white px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest text-indigo-600 border border-indigo-100 shadow-sm hover:bg-indigo-600 hover:text-white transition-all"></a>
+        </div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+
+        // Inisialisasi Teks dari JSON
+        function initUI() {
+            document.getElementById('ui-header-title').innerText = VERIFY_CONFIG.ui.headerTitle;
+            document.getElementById('ui-header-subtitle').innerText = VERIFY_CONFIG.ui.headerSubtitle;
+            document.getElementById('ui-status-badge').innerText = VERIFY_CONFIG.ui.statusBadge;
+            document.getElementById('ui-loading-text').innerText = VERIFY_CONFIG.ui.loadingText;
+            document.getElementById('ui-error-title').innerText = VERIFY_CONFIG.ui.errorTitle;
+            document.getElementById('ui-error-message').innerText = VERIFY_CONFIG.ui.errorMessage;
+            document.getElementById('ui-footer-text').innerText = VERIFY_CONFIG.ui.footer.text;
+            document.getElementById('ui-footer-link').innerText = VERIFY_CONFIG.ui.footer.linkText;
+            document.getElementById('ui-footer-link').href = VERIFY_CONFIG.ui.footer.linkUrl;
+
+            // Mapping Label
+            Object.keys(VERIFY_CONFIG.ui.labels).forEach(key => {
+                const el = document.getElementById(`label-${key}`);
+                if(el) el.innerText = VERIFY_CONFIG.ui.labels[key];
+            });
+        }
+
+        async function verifyData() {
+            initUI();
+            if(!token) { showError(); return; }
+
+            try {
+                // MODIFIKASI: Mengirim X-Custom-Auth dan X-Role secara terpisah
+                const res = await fetch(`${VERIFY_CONFIG.api.baseUrl}?table=${VERIFY_CONFIG.api.tableName}&x_10_eq=${token}`, {
+                    headers: { 
+                        'X-Custom-Auth': VERIFY_CONFIG.api.authKey,
+                        'X-Role': VERIFY_CONFIG.api.viewRole
+                    }
+                });
+                const result = await res.json();
+                
+                if(result.success && result.data.length > 0) {
+                    renderData(result.data[0]);
+                } else {
+                    showError();
+                }
+            } catch (e) { 
+                console.error(e);
+                showError();
+            }
+        }
+
+        function renderData(data) {
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('data-box').classList.remove('hidden');
+
+            document.getElementById('no_surat').innerText = data.x_05 || '-';
+            document.getElementById('perihal').innerText = data.x_06 || '-';
+            document.getElementById('tanggal').innerText = data.x_07 || '-';
+            document.getElementById('penerima').innerText = data.x_03 || '-';
+            document.getElementById('instansi_penerima').innerText = data.x_04 || '-';
+            document.getElementById('nama_penanda').innerText = data.x_01 || '-';
+            document.getElementById('jabatan_penanda').innerText = data.x_02 || '-';
+            document.getElementById('lampiran').innerText = data.x_08 || 'Tidak ada';
+            
+            // Generate QR Signature (berdasarkan URL saat ini)
+            new QRCode(document.getElementById("barcode-signature"), {
+                text: window.location.href,
+                width: 80, height: 80,
+                colorDark : "#1e1b4b", colorLight : "#ffffff",
+                correctLevel : 3
+            });
+
+            if(data.x_09) {
+                document.getElementById('keterangan').innerText = data.x_09;
+            } else {
+                document.getElementById('ket-box').classList.add('hidden');
+            }
+        }
+
+        function showError() {
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('error').classList.remove('hidden');
+        }
+
+        verifyData();
+    </script>
+</body>
+</html>

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verifikasi Voucher - Lidan</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 min-h-screen flex items-center justify-center p-4">
+
+    <div class="max-w-md w-full bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-gray-100">
+        <div class="bg-pink-900 p-8 text-white text-center">
+            <h1 class="text-xl font-black uppercase tracking-tighter">E-Verification</h1>
+            <p class="text-pink-300 text-[9px] font-bold uppercase tracking-[0.2em]">Lidan Psikologi Indonesia</p>
+        </div>
+
+        <div id="content" class="p-8">
+            <div id="loading" class="text-center py-12">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-700 mx-auto"></div>
+                <p class="mt-4 text-[9px] font-bold text-gray-400 uppercase">Checking Database...</p>
+            </div>
+
+            <div id="data-container" class="hidden space-y-6">
+                <div id="status-box" class="p-4 rounded-2xl text-center border-2">
+                    <span id="vch-status" class="font-black text-sm uppercase"></span>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="bg-gray-50 p-5 rounded-2xl">
+                        <label class="text-[8px] font-black text-gray-400 uppercase block mb-1">Diberikan Untuk:</label>
+                        <p id="vch-name" class="font-black text-gray-800 text-lg uppercase"></p>
+                    </div>
+
+                    <div class="bg-gray-50 p-5 rounded-2xl">
+                        <label class="text-[8px] font-black text-gray-400 uppercase block mb-1">Peruntukan Layanan:</label>
+                        <p id="vch-service" class="font-bold text-pink-700"></p>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="bg-gray-50 p-4 rounded-2xl">
+                            <label class="text-[8px] font-black text-gray-400 uppercase block mb-1">Nominal:</label>
+                            <p id="vch-val" class="font-black text-gray-800"></p>
+                        </div>
+                        <div class="bg-red-50 p-4 rounded-2xl border border-red-100">
+                            <label class="text-[8px] font-black text-red-400 uppercase block mb-1">Berlaku Hingga:</label>
+                            <p id="vch-exp" class="font-black text-red-600"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-4 bg-green-50 rounded-2xl border border-green-100 text-center">
+                    <span class="text-green-600 font-black text-[10px] uppercase tracking-widest">✓ Verified Authentic Voucher</span>
+                </div>
+            </div>
+
+            <div id="error" class="hidden text-center py-12">
+                <div class="bg-red-50 text-red-500 p-8 rounded-3xl border border-red-100">
+                    <span class="text-4xl block mb-4">⚠️</span>
+                    <p class="font-black uppercase text-lg">Voucher Tidak Valid</p>
+                    <p class="text-[10px] mt-2 opacity-70">Data ini tidak ditemukan dalam sistem resmi Lidan.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://lidan-co-id.pages.dev/api/contacts_filter_dinamis6';
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+
+        async function verify() {
+            if(!token) return showError();
+            try {
+                const res = await fetch(`${API_URL}?table=voucher&x_12_eq=${token}`, { 
+                    headers: { 'X-Custom-Auth': 'admin' } 
+                });
+                const result = await res.json();
+                if(result.success && result.data.length > 0) display(result.data[0]);
+                else showError();
+            } catch (e) { showError(); }
+        }
+
+        function display(data) {
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('data-container').classList.remove('hidden');
+
+            document.getElementById('vch-name').innerText = data.x_01;
+            document.getElementById('vch-service').innerText = data.x_07;
+            document.getElementById('vch-val').innerText = 'Rp ' + parseInt(data.x_08).toLocaleString('id-ID');
+            document.getElementById('vch-exp').innerText = data.x_06;
+
+            const status = data.x_13 || 'AVAILABLE';
+            const statusBox = document.getElementById('status-box');
+            const statusText = document.getElementById('vch-status');
+            statusText.innerText = status;
+
+            if(status === 'AVAILABLE') {
+                statusBox.className = "p-4 rounded-2xl text-center border-2 border-green-500 bg-green-50 text-green-700";
+            } else if(status === 'CLAIMED') {
+                statusBox.className = "p-4 rounded-2xl text-center border-2 border-gray-400 bg-gray-50 text-gray-500";
+                statusText.innerText = "SUDAH DIGUNAKAN";
+            } else {
+                statusBox.className = "p-4 rounded-2xl text-center border-2 border-red-500 bg-red-50 text-red-700";
+            }
+        }
+
+        function showError() {
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('error').classList.remove('hidden');
+        }
+        verify();
+    </script>
+</body>
+</html>

@@ -114,7 +114,12 @@
 
         const urlParams = new URLSearchParams(window.location.search);
         const token = urlParams.get('token');
-
+ function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            const parts = dateStr.split('-');
+            if (parts.length !== 3) return dateStr;
+            return `${parts[2]}-${parts[1]}-${parts[0]}`;
+        }
         async function fetchDetail() {
             if(!token) return showError();
             
@@ -142,8 +147,8 @@
             document.getElementById('pelanggan').innerText = data.x_01 || '-';
             document.getElementById('alamat').innerText = data.x_02 || '-';
             document.getElementById('kontak').innerText = data.x_03 || '-';
-            document.getElementById('tanggal').innerText = data.x_05 || '-';
-            document.getElementById('jatuh-tempo').innerText = data.x_06 || '-';
+            document.getElementById('tanggal').innerText = formatDate(data.x_05) || '-';
+            document.getElementById('jatuh-tempo').innerText = formatDate(data.x_06) || '-';
 
             // Status Badge
             const statusEl = document.getElementById('status-badge');

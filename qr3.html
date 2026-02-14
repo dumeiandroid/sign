@@ -69,15 +69,15 @@
 
                 <div id="lampiran-container" class="space-y-3">
                     <label class="text-[10px] text-indigo-400 font-black uppercase tracking-widest">Pratinjau Dokumen Lampiran</label>
-                    <div class="pdf-container shadow-inner bg-slate-100" style="height: 500px;">
-                        <iframe 
+                    <div class="pdf-container shadow-inner">
+                        <embed 
                             id="pdf-viewer" 
                             src="" 
+                            type="application/pdf" 
                             width="100%" 
-                            height="100%" 
-                            style="border: none;"
-                            allow="fullscreen"
-                        ></iframe>
+                            height="500px" 
+                            class="rounded-xl"
+                        />
                     </div>
                     <p class="text-[10px] text-slate-400 italic text-center">*Gunakan scroll untuk melihat halaman berikutnya</p>
                 </div>
@@ -138,21 +138,11 @@
             document.getElementById('nama_penanda').innerText = data.x_01 || '-';
             document.getElementById('jabatan_penanda').innerText = data.x_02 || '-';
             
-            // Logic Penampil PDF Baru
+            // Handle PDF View (Menyembunyikan toolbar dengan #toolbar=0)
             const pdfViewer = document.getElementById('pdf-viewer');
             if(data.x_08) {
-                const rawUrl = data.x_08;
-                
-                // Cek apakah perangkat Mobile menggunakan User Agent
-                const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-                
-                if (isMobile) {
-                    // Gunakan Google Docs Viewer untuk merender PDF di dalam HTML pada HP
-                    pdfViewer.src = `https://docs.google.com/viewer?url=${encodeURIComponent(rawUrl)}&embedded=true`;
-                } else {
-                    // Untuk Desktop tetap gunakan viewer bawaan browser dengan parameter toolbar=0
-                    pdfViewer.src = `${rawUrl}#toolbar=0&navpanes=0&scrollbar=0`;
-                }
+                // Menambahkan parameter toolbar=0 agar navigasi bawaan browser hilang
+                pdfViewer.src = `${data.x_08}#toolbar=0&navpanes=0&scrollbar=0`;
             } else {
                 document.getElementById('lampiran-container').style.display = 'none';
             }

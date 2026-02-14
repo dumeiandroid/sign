@@ -129,7 +129,6 @@
             document.getElementById('loading').classList.add('hidden');
             document.getElementById('data-container').classList.remove('hidden');
             
-            // Mapping Data
             document.getElementById('nomor').innerText = data.x_05 || '-';
             document.getElementById('perihal').innerText = data.x_06 || '-';
             document.getElementById('tanggal').innerText = data.x_07 || '-';
@@ -138,20 +137,17 @@
             document.getElementById('nama_penanda').innerText = data.x_01 || '-';
             document.getElementById('jabatan_penanda').innerText = data.x_02 || '-';
             
-            // Logic Penampil PDF Baru
             const pdfViewer = document.getElementById('pdf-viewer');
             if(data.x_08) {
                 const rawUrl = data.x_08;
-                
-                // Cek apakah perangkat Mobile menggunakan User Agent
                 const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
                 
                 if (isMobile) {
-                    // Gunakan Google Docs Viewer untuk merender PDF di dalam HTML pada HP
-                    pdfViewer.src = `https://docs.google.com/viewer?url=${encodeURIComponent(rawUrl)}&embedded=true`;
+                    // Penambahan rm=minimal untuk mengurangi UI Google Docs Viewer
+                    pdfViewer.src = `https://docs.google.com/viewer?url=${encodeURIComponent(rawUrl)}&embedded=true&rm=minimal`;
                 } else {
-                    // Untuk Desktop tetap gunakan viewer bawaan browser dengan parameter toolbar=0
-                    pdfViewer.src = `${rawUrl}#toolbar=0&navpanes=0&scrollbar=0`;
+                    // Penambahan view=FitH untuk memaksa PDF menyesuaikan lebar tanpa tools tambahan
+                    pdfViewer.src = `${rawUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`;
                 }
             } else {
                 document.getElementById('lampiran-container').style.display = 'none';

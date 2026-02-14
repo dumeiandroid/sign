@@ -5,24 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>E-Verifikasi Surat Lidan</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
     <style>
+        /* Sembunyikan scrollbar untuk tampilan lebih bersih */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
+        /* Container PDF agar terlihat menyatu dengan card */
         .pdf-container {
             border: 1px solid #e2e8f0;
             border-radius: 1rem;
+            overflow: hidden;
             background: #f8fafc;
-            overflow-y: auto;
-            position: relative;
-        }
-        /* Menghilangkan seleksi dan interaksi tools default */
-        canvas {
-            display: block;
-            margin: 0 auto;
-            max-width: 100%;
-            height: auto !important;
         }
     </style>
 </head>
@@ -76,13 +69,17 @@
 
                 <div id="lampiran-container" class="space-y-3">
                     <label class="text-[10px] text-indigo-400 font-black uppercase tracking-widest">Pratinjau Dokumen Lampiran</label>
-                    <div id="pdf-render-wrapper" class="pdf-container shadow-inner no-scrollbar" style="max-height: 600px;">
-                        <div id="pdf-loader" class="text-center py-10 hidden">
-                            <p class="text-xs text-slate-400 animate-pulse">Memproses dokumen...</p>
-                        </div>
-                        <div id="pdf-viewer-canvas"></div>
+                    <div class="pdf-container shadow-inner bg-slate-100" style="height: 500px;">
+                        <iframe 
+                            id="pdf-viewer" 
+                            src="" 
+                            width="100%" 
+                            height="100%" 
+                            style="border: none;"
+                            allow="fullscreen"
+                        ></iframe>
                     </div>
-                    <p class="text-[10px] text-slate-400 italic text-center">*Gunakan scroll untuk melihat seluruh halaman</p>
+                    <p class="text-[10px] text-slate-400 italic text-center">*Gunakan scroll untuk melihat halaman berikutnya</p>
                 </div>
 
                 <div class="pt-6 border-t border-gray-100 grid grid-cols-2 gap-4">
@@ -112,8 +109,6 @@
     </div>
 
     <script>
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
-
         const AUTH_KEY = 'admin';
         const urlParams = new URLSearchParams(window.location.search);
         const token = urlParams.get('token');
@@ -130,43 +125,6 @@
             } catch (e) { showError(); }
         }
 
-        async function renderPDF(url) {
-            const container = document.getElementById('pdf-viewer-canvas');
-            const loader = document.getElementById('pdf-loader');
-            container.innerHTML = '';
-            loader.classList.remove('hidden');
-
-            try {
-                const loadingTask = pdfjsLib.getDocument(url);
-                const pdf = await loadingTask.promise;
-                
-                // Render semua halaman secara berurutan
-                for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-                    const page = await pdf.getPage(pageNum);
-                    const viewport = page.getViewport({ scale: 1.5 }); // Resolusi ditingkatkan agar tajam
-                    
-                    const canvas = document.createElement('canvas');
-                    const context = canvas.getContext('2d');
-                    canvas.height = viewport.height;
-                    canvas.width = viewport.width;
-                    canvas.className = "mb-4 shadow-sm rounded-lg";
-
-                    const renderContext = {
-                        canvasContext: context,
-                        viewport: viewport
-                    };
-                    
-                    container.appendChild(canvas);
-                    await page.render(renderContext).promise;
-                }
-            } catch (error) {
-                console.error('Error rendering PDF:', error);
-                container.innerHTML = `<p class="text-center p-10 text-red-400 text-xs uppercase font-bold">Gagal memuat pratinjau dokumen</p>`;
-            } finally {
-                loader.classList.add('hidden');
-            }
-        }
-
         function showData(data) {
             document.getElementById('loading').classList.add('hidden');
             document.getElementById('data-container').classList.remove('hidden');
@@ -179,8 +137,18 @@
             document.getElementById('nama_penanda').innerText = data.x_01 || '-';
             document.getElementById('jabatan_penanda').innerText = data.x_02 || '-';
             
+            const pdfViewer = document.getElementById('pdf-viewer');
             if(data.x_08) {
-                renderPDF(data.x_08);
+                const rawUrl = data.x_08;
+                const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+                
+                if (isMobile) {
+                    // Penambahan rm=minimal untuk mengurangi UI Google Docs Viewer
+                    pdfViewer.src = `https://docs.google.com/viewer?url=${encodeURIComponent(rawUrl)}&embedded=true&rm=minimal`;
+                } else {
+                    // Penambahan view=FitH untuk memaksa PDF menyesuaikan lebar tanpa tools tambahan
+                    pdfViewer.src = `${rawUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`;
+                }
             } else {
                 document.getElementById('lampiran-container').style.display = 'none';
             }

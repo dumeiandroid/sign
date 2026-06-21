@@ -83,25 +83,6 @@
                     </div>
                 </div>
 
-                <div id="rekening-box" class="p-6 bg-gradient-to-br from-slate-50 to-gray-100 rounded-2xl border border-gray-200">
-                    <label class="text-[9px] text-gray-500 font-black uppercase tracking-widest mb-4 block">Informasi Pembayaran</label>
-                    <div class="grid grid-cols-3 gap-4 text-sm">
-                        <div>
-                            <p class="text-[8px] text-gray-400 font-black uppercase mb-1">Bank</p>
-                            <p id="rek-bank-display" class="font-black text-gray-800 uppercase"></p>
-                        </div>
-                        <div>
-                            <p class="text-[8px] text-gray-400 font-black uppercase mb-1">No. Rekening</p>
-                            <p id="rek-norek-display" class="font-black text-gray-800 font-mono"></p>
-                        </div>
-                        <div>
-                            <p class="text-[8px] text-gray-400 font-black uppercase mb-1">Atas Nama</p>
-                            <p id="rek-nama-display" class="font-black text-gray-800"></p>
-                        </div>
-                    </div>
-                    <p class="text-[9px] text-gray-400 font-bold mt-4 italic">* Harap sertakan nomor invoice saat transfer</p>
-                </div>
-
                 <div id="catatan-box" class="p-5 bg-yellow-50/50 rounded-2xl border border-yellow-100">
                     <label class="text-[9px] text-yellow-600 font-black uppercase">Catatan / Notes</label>
                     <p id="catatan" class="text-gray-600 text-sm mt-2 leading-relaxed"></p>
@@ -182,14 +163,9 @@
                 statusEl.className = 'inline-block px-4 py-2 rounded-xl font-black text-sm uppercase bg-yellow-100 text-yellow-700';
             }
 
-            // Items Table + Info Rekening
+            // Items Table
             try {
-                const parsedX07 = JSON.parse(data.x_07 || '[]');
-                /* Backward compatible: x_07 lama = array items langsung,
-                   x_07 baru = { items: [...], rekening: {...} | null } */
-                const items    = Array.isArray(parsedX07) ? parsedX07 : (parsedX07.items || []);
-                const rekening = Array.isArray(parsedX07) ? null       : (parsedX07.rekening || null);
-
+                const items = JSON.parse(data.x_07 || '[]');
                 const tbody = document.getElementById('items-table');
                 tbody.innerHTML = '';
                 
@@ -203,13 +179,6 @@
                         </tr>
                     `;
                 });
-
-                // Info Rekening: pakai data custom dari JSON jika ada, jika tidak fallback ke default Permata
-                const DEFAULT_REKENING = { bank: 'PERMATA', no_rekening: '04124920006', atas_nama: 'PT Lidan Indah Abadi' };
-                const rek = rekening || DEFAULT_REKENING;
-                document.getElementById('rek-bank-display').innerText  = rek.bank;
-                document.getElementById('rek-norek-display').innerText = rek.no_rekening;
-                document.getElementById('rek-nama-display').innerText  = rek.atas_nama;
             } catch (e) {
                 console.error('Error parsing items:', e);
             }
